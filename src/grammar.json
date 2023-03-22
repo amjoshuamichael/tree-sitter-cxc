@@ -35,7 +35,7 @@
     },
     "int_type": {
       "type": "PATTERN",
-      "value": "u[0-9]+|i[0-9]+"
+      "value": "u[0-9]+|i[0-9]+|usize|isize"
     },
     "float_type": {
       "type": "PATTERN",
