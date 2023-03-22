@@ -1,0 +1,10 @@
+Vec < T > = {
+    field: u32,
+}
+
+<T> &Vec<T>:. {
+    get(index: i64); i64 {
+        ptr: &T = self.data_loc + index
+        ; *ptr
+    }
+}
