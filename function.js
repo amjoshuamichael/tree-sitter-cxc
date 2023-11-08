@@ -1,12 +1,15 @@
 const UTILS = require("./utils.js")
 const CALL_PREC = 5
 const EXPR_PREC = 6
+const TYPED_LIT_PREC = 7
+const BLOCK_PREC = 1
 
 FUNCTION = {
     statement: $ => choice(
         field("return", seq( ";", $.expression)),
         seq($.var_declaration, "=", $.expression),
         seq($.expression, "=", $.expression),
+        seq($.var_name, ":=", $.expression),
         $.expression,
     ),
 
@@ -23,13 +26,13 @@ FUNCTION = {
     if_statement: $ => prec.left(seq(
         "?",
         field("if", $.math_expr),
-        field("then", $.expression),
+        field("then", $.block),
     )),
 
     if_else_statement: $ => prec(7, seq(
         $.if_statement,
         ":",
-        $.expression,
+        $.block,
     )),
 
     while_statement: $ => seq(
@@ -39,12 +42,14 @@ FUNCTION = {
     ),
 
     call: $ => prec(CALL_PREC, seq(
-        field("func", $._expr_atom),
+        field("func", choice($._expr_atom, $.static_method_path)),
         optional($.type_parameters),
         "(",
         UTILS.separatedBy(",", $.expression),
         ")",
     )),
+
+    static_method_path: $ => seq($.type, ":", $.var_name),
 
     math_expr: $ => 
       prec.left(seq(
@@ -53,22 +58,33 @@ FUNCTION = {
           repeat(seq($.binary_op, repeat($.unary_op), $._expr_atom))
       )),
 
-    binary_op: $ => choice('+', '-', '*', '/', '**', '%', '==', '!=', '<', '>', '<=', '>=', '&&', '||', '.', '&', '|', '^'),
-    unary_op: $ => choice('-', '*', '&', '!'),
+    binary_op: $ => choice('+', '-', '*', '/', '**', '%', '==', '!=', '<', '>', '<=', '>=', '&&', '||', '&', '|', '^'),
+    unary_op: $ => prec(BLOCK_PREC + 5, choice('-', '*', '&', '!', '+', '~')),
 
     _expr_atom: $ => choice(
+        seq($.type, $.lit),
+        $.call,
+        seq("(", $.expression, ")"),
+        $.member,
+        $.lit,
         $.var_name,
+    ),
+
+    member: $ => seq($._expr_atom, ".", $.var_name),
+
+    lit: $ => choice(
         $._int_lit,
         $.float_lit,
         $.bool_lit,
         $.string_lit,
-        seq(
-            field("type", $.type), 
-            $._expr_atom
-        ),
-        $.call,
-        seq("(", $.expression, ")"),
+        $.struct_lit,
     ),
+
+    struct_lit: $ => prec(BLOCK_PREC + 2, seq(
+        "{",
+        UTILS.separatedBy(",", seq($.var_name, "=", $.expression)),
+        "}"
+    )),
 
     _int_lit: $ => choice($.binary_lit, $.octal_lit, $.decimal_lit, $.hex_lit),
     binary_lit: $ => /0b[01][01_]*/,
@@ -78,5 +94,4 @@ FUNCTION = {
     float_lit: $ => /[0-9_]*\.[0-9_]+e[+-]?[0-9_]+/,
     bool_lit: $ => choice('true', 'false'),
     string_lit: $ => /"[^"]*"/,
-
 }

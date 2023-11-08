@@ -1,4 +1,5 @@
 const UTILS = require("./utils.js")
+const BLOCK_PREC = 1
 
 FILE = {
     _definition: $ => choice(
@@ -45,6 +46,6 @@ FILE = {
         ">",
     ),
 
-    block: $ => seq("{", repeat($.statement), "}"),
+    block: $ => prec(1, seq("{", repeat($.statement), "}")),
 
 }

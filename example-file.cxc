@@ -1,10 +1,67 @@
-Vec < T > = {
-    field: u32,
+<T> { +ptr: &T, +len: u64 }:. {
+    get(index: u64); T {
+        ptr: &T = self.ptr.ptr_add(index)
+        ; *ptr
+    }
+
+    get_ref(index: u64); &T {
+        ptr: &T = self.ptr.ptr_add(index)
+        ; ptr
+    }
+
+    into_iter(); SliceIter<T> {
+        ; SliceIter<T> {
+            it = self.ptr,
+            inner = {
+                end = self.ptr.ptr_add(self.len),
+            },
+        }
+    }
+
+    slice(range: Range<u64>); { +ptr: &T, +len: u64 } {
+        ; Me {
+            ptr = self.ptr.ptr_add(range.start),
+            len = range.end - range.start,
+        }
+    }
+
+    to_slice(); { +ptr: &T, +len: u64 } { 
+        ; self
+    }
 }
 
-<T> &Vec<T>:. {
-    get(index: i64); i64 {
-        ptr: &T = self.data_loc + index
-        ; *ptr
+SliceIter<T> = {
+    inner: {
+        end: &T,
+    },
+    it: &T,
+}
+
+<T> &SliceIter<T>:. {
+    still_iterating(); bool {
+        ; self.it != self.inner.end
+    }
+
+    next() {
+        self.it = self.it.ptr_add(1)
+    }
+}
+
+SliceIterCopy<T> = {
+    inner: {
+        ptr: &T,
+        end: &T,
+    },
+    it: T,
+}
+
+<T> &SliceIterCopy<T>:. {
+    still_iterating(); bool {
+        ; self.inner.ptr != self.inner.end
+    }
+
+    next() {
+        self.inner.ptr = self.inner.ptr.ptr_add(1)
+        self.it = *self.inner.ptr
     }
 }

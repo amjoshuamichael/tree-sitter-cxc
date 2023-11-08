@@ -17,7 +17,8 @@ TYPE = {
         $.function_type,
         $.type_level_func,
         $.array_type,
-        $.union_type,
+        $.array_elem,
+        $.destructor_type,
     )),
 
     generic_type: $ => seq( $.type_name, $.type_parameters ),
@@ -26,16 +27,18 @@ TYPE = {
     dereference_type: $ => prec(UNARY_OP_PREC, seq( "*", $.type )),
 
     struct_type: $ => seq( "{", UTILS.separatedBy(",", $.struct_field), "}" ),
-    struct_field: $ => seq( $.var_name, ":", $.type ),
+    struct_field: $ => seq(optional("+"), $.var_name, ":", $.type),
     tuple_type: $ => prec(TUPLE_PREC, seq( "{", UTILS.separatedBy(",", $.type), "}" )),
 
     sum_type: $ => prec(TUPLE_PREC - 1, seq( "{", UTILS.separatedBy("/", $.type), "}" )),
 
-    function_type: $ => seq( "(", UTILS.separatedBy(",", $.type), ")", ";", $.type ),
+    function_type: $ => prec.left(seq( "(", UTILS.separatedBy(",", $.type), ")", ";", $.type )),
 
     type_level_func: $ => seq( $.type_name, "(", UTILS.separatedBy(",", $.type), ")", ),
-    array_type: $ => seq( "[", $._int_lit, "]", $.type ),
-    union_type: $ => prec(-1, prec.left(seq( $.type, "+", $.type ))),
+    array_type: $ => prec.right(seq( "[", $._int_lit, "]", $.type )),
+
+    destructor_type: $ => seq( $.type, "~", $.expression),
+    array_elem: $ => seq( $.type, "[]"),
 
     type_parameters: $ => prec(6, seq( "<", UTILS.separatedBy(",", $.type), ">" )),
 }
